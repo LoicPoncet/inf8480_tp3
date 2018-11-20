@@ -49,14 +49,10 @@ resources:
       networks:
               - network: { get_param: private_subnet_id }
       user_data_format: RAW
-      user_data:
-        str_replace:
-          template: |
+      user_data: |
             #!/bin/bash
             wget https://raw.githubusercontent.com/houssemmh/INF8480-TP3/master/server.py
             python server.py
-          params:
-            db_port: 0
   
   floating_ip:
     type: OS::Neutron::FloatingIP

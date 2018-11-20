@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 
 def get(url):
@@ -8,9 +9,12 @@ def get(url):
     return elapsed_time
 
 def main():
-    total_time = 0
-    for _ in range(30):
-        total_time += get("132.207.12.229:8080/?nom=Loic")
-    print(total_time / 30)
+    if len(sys.argv) != 2:
+        print("Usage: \"python client.py IP_ADDR\"")
+    else:
+        total_time = 0
+        for _ in range(30):
+            total_time += get(sys.argv[1] + ":8080/?nom=Loic")
+        print(total_time / 30)
 
 main()
