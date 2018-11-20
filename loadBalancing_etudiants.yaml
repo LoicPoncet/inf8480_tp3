@@ -7,12 +7,16 @@ parameters:
   image:
     type: string
     description: Image utilisee pour les serveurs
-    #A completer
+    default: INF4410-Ubuntu-trusty-mini 
+    constraints:
+      - custom_constraint: glance.image
 
   flavor:
     type: string
     description: Flavor utilisee par les serveurs
-    #A completer
+    default: INF4410-mini
+    constraints:
+      - custom_constraint: nova.flavor
 
   subnet_id:
     type: string
@@ -26,12 +30,32 @@ resources:
   server_nodes:
       type: OS::Heat::ResourceGroup
       properties:
-      #A completer
+        count: 2
+        resource_def:
+            type: OS::Nova::Server
+            properties:
+                key_name: { get_param: key_name }
+                image: { get_param: image }
+                flavor: { get_param: flavor }
+                admin_pass: { get_param: admin_pass }
+                networks:
+                        - network: { get_param: net1 }
+                user_data_format: RAW
+                user_data:
+                    str_replace:
+                    template: |
+                        #!/bin/bash
+                        wget https://raw.githubusercontent.com/houssemmh/INF8480-TP3/master/server.py
+                        python server.py
 
 
   mypool:
       type: OS::Neutron::Pool
-      #A completer
+      propeties:
+        lb_method:
+        protocol:
+        subnet:
+        vip:
 
   myloadbalancer:
       type: OS::Neutron::LoadBalancer
