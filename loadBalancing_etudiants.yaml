@@ -3,7 +3,13 @@ heat_template_version: 2014-10-16
 description: A template to deploy a load balanced web server
 
 parameters:
-  private_subnet_id:
+  external_network:
+    type: string
+    description: A Neutron external network
+    default: ext-net
+    constraints:
+     - custom_constraint: neutron.network
+  private_subnet:
     type: string
     default: inf4410-net
     constraints:
@@ -26,7 +32,9 @@ parameters:
   subnet_id:
     type: string
     description: Sous-reseau dans lequel le load balancer sera situe
-    #A completer
+    default: inf4410-subnet
+    constraints:
+     - custom_constraint: neutron.subnet
 
     # Vous pouvez ajouter d'autres paramètres
     # Il faut bien définir les descriptions, les valeurs par default et les contraintes
@@ -43,7 +51,7 @@ resources:
                 image: { get_param: image }
                 flavor: { get_param: flavor }
                 networks:
-                        - network: { get_param: private_subnet_id }
+                        - network: { get_param: private_subnet }
                 user_data_format: RAW
                 user_data: |
                         #!/bin/bash
@@ -53,20 +61,20 @@ resources:
 
   mypool:
       type: OS::Neutron::Pool
-      propeties:
+      properties:
         monitors: [{ get_resource: mymonitor }]
         lb_method: ROUND_ROBIN
         protocol: HTTP
         subnet: { get_param: subnet_id }
         vip:
-            protocol_port: 80
+            protocol_port: 8080
 
   myloadbalancer:
       type: OS::Neutron::LoadBalancer
       properties:
           members: { get_attr: [server_nodes, refs] }
           pool_id: { get_resource: mypool }
-          protocol_port: 80
+          protocol_port: 8080
 
   mymonitor:
       type: OS::Neutron::HealthMonitor
@@ -76,6 +84,13 @@ resources:
           timeout: 5
           type: PING
 
+  # assign a floating ip address to the load balancer
+  # pool.
+  lb_floating:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network: {get_param: external_network}
+      port_id: {get_attr: [mypool, vip, port_id]}
 
 outputs:
   pool_ip_address:
