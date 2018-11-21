@@ -1,15 +1,21 @@
-heat_template_version: 2013-05-23
+heat_template_version: 2014-10-16
 
 description: Simple template to deploy a single compute instance
 
 parameters:
-  private_subnet_id:
+  external_network:
+    type: string
+    default: ext-net
+    constraints:
+     - custom_constraint: neutron.network
+  private_subnet:
     type: string
     default: inf4410-net
     constraints:
      - custom_constraint: neutron.network
   key_name:
     type: string
+    default: INF8480TP1
     description: Name of an existing key pair to use for the server
     constraints:
       - custom_constraint: nova.keypair
@@ -26,18 +32,6 @@ parameters:
     constraints:
       - custom_constraint: glance.image
 
-  admin_pass:
-    type: string
-    description: Admin password
-    hidden: true
-    constraints:
-      - length: { min: 6, max: 8 }
-        description: Password length must be between 6 and 8 characters
-      - allowed_pattern: "[a-zA-Z0-9]+"
-        description: Password must consist of characters and numbers only
-      - allowed_pattern: "[A-Z]+[a-zA-Z0-9]*"
-        description: Password must start with an uppercase character
-
 resources:
   server:
     type: OS::Nova::Server
@@ -45,9 +39,8 @@ resources:
       key_name: { get_param: key_name }
       image: { get_param: image }
       flavor: { get_param: flavor }
-      admin_pass: { get_param: admin_pass }
       networks:
-              - network: { get_param: private_subnet_id }
+              - network: { get_param: private_subnet }
       user_data_format: RAW
       user_data: |
             #!/bin/bash
@@ -57,7 +50,7 @@ resources:
   floating_ip:
     type: OS::Neutron::FloatingIP
     properties:
-      floating_network:  { get_param: private_subnet_id }
+      floating_network:  { get_param: external_network }
 
   floating_ip_association:
     type: OS::Nova::FloatingIPAssociation
